@@ -27,6 +27,8 @@ async function connectToWhatsApp(){
 
        //console.log(update);
         
+       //s
+
         if(qr){
             console.log('⚡ Escanea este código QR con tu WhatsApp:');
             qrcode.generate(qr, {small: true});
