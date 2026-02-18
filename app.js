@@ -3,11 +3,14 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = requi
 const pino = require('pino');
 const {Boom} = require('@hapi/boom');
 const qrcode = require('qrcode-terminal');
+
+const { getCurrentUser, getScheduledEvents } = require('./config/calendly')
 const fs = require('fs/promises');
 
 require('dotenv').config();
 
 let sock; // Variable global para mantener la conexión
+
 
 
 
@@ -27,7 +30,7 @@ async function connectToWhatsApp(){
 
        //console.log(update);
         
-       //s
+       //ss
 
         if(qr){
             console.log('⚡ Escanea este código QR con tu WhatsApp:');
@@ -37,29 +40,56 @@ async function connectToWhatsApp(){
         if (connection === 'close'){
             const shouldReconnect = (lastDisconnect.error instanceof Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log('Conexion Cerrada. Reintentar?:', shouldReconnect);
-            if(shouldReconnect) {
-                fs.rm('./auth_session', {
-                    recursive: true,
-                    force: true
-                });
-                connectToWhatsApp();
-            }
+            // if(shouldReconnect) {
+            //     fs.rm('./auth_session', {
+            //         recursive: true,
+            //         force: true
+            //     });
+            //     connectToWhatsApp();
+            // }
         } else if (connection === 'open') {
             console.log('Bot Conectado con Exito!!');
         }
     });
 
+    const userState = {};
+
     // Escuchador de mensajes (El Menú)
     sock.ev.on('messages.upsert', async ({messages }) => {
+        
+        
         const msg = messages[0];
+        
+        //console.log(messages[0]);
+        
         if(!msg.message || msg.key.fromMe) return;
 
         const jid = msg.key.remoteJid;
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
+        
+        console.log(msg);
+        
+        
 
-        if (text?.toLowerCase() === 'hola') {
-            await sock.sendMessage(jid, {text: '¡Hola desde Express! Escribe "test" para probar la API.'});
+        if (text?.toLowerCase() === 'hola' && userState[jid] !== "NONE") {
+            await sock.sendMessage(jid, {text: `¡Hola ${msg.pushName} desde Express! Escribe "test" para probar la API.`});
+            getScheduledEvents();
+            try {
+                console.log('Archivando:...');
+                //console.log(sock);
+                
+                await sock.chatModify({
+                    pin: true
+                }, jid);
+                console.log('Archivado1');
+                
+            } catch (error) {
+                console.log('Error al archivar');
+            }
+            userState[jid] = "NONE"; 
         }
+        
+
     });
 
     // --- ENDPOINT DE EXPRESS ---
