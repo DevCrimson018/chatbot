@@ -6,6 +6,7 @@ const qrcode = require('qrcode-terminal');
 
 const { getCurrentUser, getScheduledEvents } = require('./config/calendly')
 const fs = require('fs/promises');
+const {  menuFlow } = require('./menus/mainMenu');
 
 require('dotenv').config();
 
@@ -60,34 +61,34 @@ async function connectToWhatsApp(){
         
         const msg = messages[0];
         
-        //console.log(messages[0]);
+        // console.log(messages[0]);
         
         if(!msg.message || msg.key.fromMe) return;
 
         const jid = msg.key.remoteJid;
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
         
-        console.log(msg);
+        // console.log(jid);
+        // console.log(msg);
         
         
 
-        if (text?.toLowerCase() === 'hola' && userState[jid] !== "NONE") {
-            await sock.sendMessage(jid, {text: `¡Hola ${msg.pushName} desde Express! Escribe "test" para probar la API.`});
-            getScheduledEvents();
-            try {
-                console.log('Archivando:...');
-                //console.log(sock);
-                
-                await sock.chatModify({
-                    pin: true
-                }, jid);
-                console.log('Archivado1');
-                
-            } catch (error) {
-                console.log('Error al archivar');
-            }
-            userState[jid] = "NONE"; 
+        // await sock.sendMessage(jid, {text: `¡Hola ${msg.pushName} desde Express! Escribe "test" para probar la API.`});
+        // getScheduledEvents();
+        menuFlow(sock, userState, text, msg, jid);
+        try {
+            // console.log('Archivando:...');
+            // //console.log(sock);
+            
+            // await sock.chatModify({
+            //     pin: true
+            // }, jid);
+            // console.log('Archivado1');
+            
+        } catch (error) {
+            console.log('Error al archivar');
         }
+
         
 
     });
